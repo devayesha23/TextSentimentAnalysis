@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Sentiment Analysis by Filestack</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-image: url('https://cdn.prod.website-files.com/614c82ed388d53640613982e/64f7989c55786e5b4de9b9cb_sentiment-analysis-explained.webp');
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+        h1 {
+            color: #EC572E;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        .btn {
+            display: inline-block;
+            margin: 10px;
+            padding: 12px 24px;
+            background-color: #EC572E;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .form-group {
+            margin: 20px auto;
+            max-width: 600px;
+        }
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 50px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        .form-group button {
+            padding: 10px 20px;
+        }
+        .output {
+            margin: 20px auto;
+            max-width: 600px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #fff;
+            text-align: left;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .output p {
+            margin: 0;
+            font-size: 1.1em;
+        }
+        .progress-bar {
+            height: 30px;
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0;
+            background-color: #EC572E;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+            transition: width 0.3s ease;
+        }
+    </style>
+    <script src="https://static.filestackapi.com/filestack-js/3.x.x/filestack.min.js"></script>
+</head>
+<body>
+    <h1>Sentiment Analysis by Filestack</h1>
+    <div id="textAnalysisForm">
+        <div class="form-group">
+            <input type="text" id="textInput" placeholder="Enter your text...">
+            <button class="btn" onclick="submitText()">Submit</button>
+        </div>
+        <div id="textOutput" class="output" style="display: none;">
+            <strong>Analysis Result:</strong>
+            <p id="textAnalysisResult"></p>
+            <div class="progress-bar">
+                <div id="progressBarFill" class="progress-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function submitText() {
+            var textInput = document.getElementById('textInput').value;
+            if (textInput.trim() === '') {
+                alert('Please enter some text to analyze.');
+                return;
+            }
+
+            // Constructing the Filestack API URL
+            var filestackURL = "https://cdn.filestackcontent.com/A18L3T2eWRemxYIGwGlZsz/security=p:eyJleHBpcnkiOjE3MjIzNzE0MDAsImNhbGwiOlsicGljayIsInJlYWQiLCJzdGF0Iiwid3JpdGUiLCJ3cml0ZVVybCIsInN0b3JlIiwiY29udmVydCIsInJlbW92ZSIsImV4aWYiLCJydW5Xb3JrZmxvdyJdfQ==,s:7444401cc427f93c70d1485b76f08686dd517be2a136b9978a4bbbca44b87ae0/text_sentiment=text:\"" + encodeURIComponent(textInput) + "\"";
+
+            // Send AJAX request to Filestack API
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", filestackURL, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    displayTextAnalysisResult(response);
+                } else if (xhr.readyState === 4 && xhr.status !== 200) {
+                    displayTextAnalysisResult({ error: 'Error occurred while fetching data.' });
+                }
+            };
+            xhr.send();
+        }
+
+        function displayTextAnalysisResult(result) {
+            var textOutput = document.getElementById('textOutput');
+            var textAnalysisResult = document.getElementById('textAnalysisResult');
+            var progressBarFill = document.getElementById('progressBarFill');
+
+            // Check if emotions data is available
+            if (result.emotions) {
+                var emotions = result.emotions;
+
+                // Determine sentiment based on the highest percentage emotion
+                var maxEmotion = '';
+                var maxPercentage = 0;
+
+                for (var emotion in emotions) {
+                    if (emotions[emotion] > maxPercentage) {
+                        maxPercentage = emotions[emotion];
+                        maxEmotion = emotion;
+                    }
+                }
+
+                // Convert maxEmotion to a human-readable sentiment
+                var sentiment = '';
+                if (maxEmotion === 'Positive') {
+                    sentiment = 'Positive';
+                } else if (maxEmotion === 'Negative') {
+                    sentiment = 'Negative';
+                } else if (maxEmotion === 'Neutral') {
+                    sentiment = 'Neutral';
+                } else {
+                    sentiment = 'Mixed'; // Handle additional emotions if necessary
+                }
+
+                // Calculate the percentage of the sentiment detected
+                var percentage = (maxPercentage * 100).toFixed(2) + "%";
+
+                // Display only the detected sentiment and percentage
+                textAnalysisResult.textContent = "Detected Sentiment: " + sentiment + " (" + percentage + ")";
+                
+                // Update the progress bar
+                progressBarFill.style.width = percentage;
+                progressBarFill.textContent = percentage;
+                if (sentiment === 'Positive') {
+                    progressBarFill.style.backgroundColor = '#4caf50'; // Green for positive
+                } else if (sentiment === 'Negative') {
+                    progressBarFill.style.backgroundColor = '#f44336'; // Red for negative
+                } else if (sentiment === 'Neutral') {
+                    progressBarFill.style.backgroundColor = '#ffc107'; // Yellow for neutral
+                } else {
+                    progressBarFill.style.backgroundColor = '#2196f3'; // Blue for mixed/other
+                }
+
+                textOutput.style.display = 'block';
+            } else {
+                textAnalysisResult.textContent = "No emotion analysis data available.";
+                textOutput.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
